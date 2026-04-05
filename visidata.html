@@ -1,0 +1,1776 @@
+html_content = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WebVisiData — Browser-based VisiData Clone</title>
+<style>
+:root {
+  --bg-primary: #1a1b26;
+  --bg-secondary: #24283b;
+  --bg-tertiary: #2f3348;
+  --bg-header: #3b4261;
+  --text-primary: #c0caf5;
+  --text-secondary: #a9b1d6;
+  --text-dim: #565f89;
+  --accent: #7aa2f7;
+  --accent2: #bb9af7;
+  --green: #9ece6a;
+  --red: #f7768e;
+  --yellow: #e0af68;
+  --orange: #ff9e64;
+  --cyan: #7dcfff;
+  --selected-bg: #283457;
+  --selected-border: #7aa2f7;
+  --cursor-bg: #3d59a1;
+  --key-col-bg: #2a2e45;
+  --border-color: #3b4261;
+  --scrollbar-bg: #1a1b26;
+  --scrollbar-thumb: #3b4261;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+}
+
+/* === TOP BAR === */
+#top-bar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  padding: 0;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+#top-bar .logo {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent);
+  padding: 0 14px;
+  letter-spacing: 1px;
+  border-right: 1px solid var(--border-color);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  background: var(--bg-tertiary);
+}
+
+#top-bar .logo span { color: var(--accent2); }
+
+#url-input-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  gap: 8px;
+}
+
+#url-input-container label {
+  font-size: 11px;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+#url-input {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: 4px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+#url-input:focus { border-color: var(--accent); }
+#url-input::placeholder { color: var(--text-dim); }
+
+#load-btn {
+  background: var(--accent);
+  color: var(--bg-primary);
+  border: none;
+  padding: 5px 16px;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  cursor: pointer;
+  letter-spacing: 0.5px;
+  transition: opacity 0.2s;
+}
+
+#load-btn:hover { opacity: 0.85; }
+#load-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+#sample-btn {
+  background: var(--bg-tertiary);
+  color: var(--accent2);
+  border: 1px solid var(--border-color);
+  padding: 5px 12px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+#sample-btn:hover { background: var(--bg-header); border-color: var(--accent2); }
+
+/* === SHEET TABS === */
+#sheet-tabs {
+  display: flex;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border-color);
+  height: 28px;
+  flex-shrink: 0;
+  overflow-x: auto;
+  align-items: flex-end;
+}
+
+.sheet-tab {
+  padding: 4px 16px;
+  font-size: 11px;
+  color: var(--text-dim);
+  cursor: pointer;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  white-space: nowrap;
+  transition: all 0.15s;
+  margin-left: 2px;
+}
+
+.sheet-tab:hover { color: var(--text-secondary); background: var(--bg-secondary); }
+.sheet-tab.active {
+  color: var(--accent);
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  font-weight: 600;
+}
+
+.sheet-tab .close-tab {
+  margin-left: 8px;
+  color: var(--text-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+.sheet-tab .close-tab:hover { color: var(--red); }
+
+/* === COLUMN HEADER ROW === */
+#col-header-row {
+  display: flex;
+  background: var(--bg-header);
+  border-bottom: 2px solid var(--accent);
+  flex-shrink: 0;
+  height: 28px;
+  overflow: hidden;
+}
+
+.col-header {
+  flex-shrink: 0;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-right: 1px solid rgba(255,255,255,0.07);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background 0.1s;
+}
+
+.col-header:hover { background: rgba(255,255,255,0.05); }
+.col-header.active-col { background: rgba(122,162,247,0.15); }
+.col-header.key-col { color: var(--yellow); }
+.col-header.key-col::before {
+  content: '🔑';
+  font-size: 9px;
+  margin-right: 4px;
+}
+
+.col-header .sort-indicator {
+  font-size: 10px;
+  margin-left: 4px;
+  color: var(--green);
+}
+
+.col-header .type-indicator {
+  font-size: 9px;
+  margin-left: 4px;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+.col-header .resize-handle {
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 5px;
+  height: 100%;
+  cursor: col-resize;
+  z-index: 10;
+}
+
+/* Row number gutter */
+.row-gutter {
+  width: 55px;
+  min-width: 55px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 8px;
+  font-size: 10px;
+  color: var(--text-dim);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+/* === DATA TABLE === */
+#table-container {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+#table-container::-webkit-scrollbar { width: 10px; height: 10px; }
+#table-container::-webkit-scrollbar-track { background: var(--scrollbar-bg); }
+#table-container::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 5px;
+  border: 2px solid var(--scrollbar-bg);
+}
+
+.data-row {
+  display: flex;
+  height: 24px;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background 0.05s;
+}
+
+.data-row:hover { background: rgba(255,255,255,0.02); }
+.data-row.cursor-row { background: var(--cursor-bg) !important; }
+.data-row.selected-row { background: var(--selected-bg); }
+.data-row.selected-row .row-gutter { color: var(--green); font-weight: 700; }
+.data-row.cursor-row.selected-row { background: #2a4a7a; }
+
+.data-cell {
+  flex-shrink: 0;
+  padding: 0 8px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-right: 1px solid rgba(255,255,255,0.02);
+}
+
+.data-cell.cursor-cell {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: rgba(122,162,247,0.1);
+}
+
+.data-cell.key-col-cell { background: var(--key-col-bg); }
+.data-cell.numeric { text-align: right; justify-content: flex-end; color: var(--cyan); }
+.data-cell.date-type { color: var(--orange); }
+.data-cell.hidden-col { display: none; }
+.data-cell.editing {
+  padding: 0;
+}
+
+.data-cell.editing input {
+  width: 100%;
+  height: 100%;
+  background: var(--bg-primary);
+  color: var(--yellow);
+  border: 2px solid var(--yellow);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 0 6px;
+  outline: none;
+}
+
+/* === STATUS BAR === */
+#status-bar {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border-color);
+  height: 24px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  font-size: 11px;
+  gap: 16px;
+}
+
+#status-bar .status-section {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+#status-bar .status-label { color: var(--text-dim); }
+#status-bar .status-value { color: var(--text-primary); }
+#status-bar .status-accent { color: var(--accent); font-weight: 600; }
+#status-bar .status-green { color: var(--green); }
+#status-bar .status-yellow { color: var(--yellow); }
+#status-bar .spacer { flex: 1; }
+
+/* === COMMAND STATUS LINE === */
+#command-line {
+  display: flex;
+  align-items: center;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+  height: 26px;
+  flex-shrink: 0;
+  padding: 0 12px;
+  font-size: 11px;
+  color: var(--green);
+}
+
+#command-line.error { color: var(--red); }
+#command-line.warning { color: var(--yellow); }
+
+/* === INPUT MODAL === */
+#input-modal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+#input-modal.show { display: flex; }
+
+#input-modal .modal-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 400px;
+  max-width: 600px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+#input-modal .modal-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 12px;
+}
+
+#input-modal input {
+  width: 100%;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  outline: none;
+}
+
+#input-modal input:focus { border-color: var(--accent); }
+
+/* === HELP OVERLAY === */
+#help-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+}
+
+#help-overlay.show { display: flex; }
+
+#help-box {
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  padding: 24px 30px;
+  max-width: 780px;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+
+#help-box::-webkit-scrollbar { width: 8px; }
+#help-box::-webkit-scrollbar-track { background: transparent; }
+#help-box::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+
+#help-box h2 {
+  color: var(--accent);
+  font-size: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.help-section { margin-bottom: 18px; }
+.help-section h3 {
+  color: var(--accent2);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.help-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 20px;
+}
+
+.help-item {
+  display: flex;
+  align-items: baseline;
+  font-size: 11.5px;
+  padding: 2px 0;
+}
+
+.help-key {
+  color: var(--yellow);
+  font-weight: 700;
+  min-width: 90px;
+  flex-shrink: 0;
+}
+
+.help-desc { color: var(--text-secondary); }
+
+/* === FREQUENCY SHEET STYLES === */
+.freq-bar-container {
+  width: 100%;
+  height: 14px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.freq-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent2));
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+
+/* === LOADING OVERLAY === */
+#loading-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 3000;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 16px;
+}
+
+#loading-overlay.show { display: flex; }
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--bg-tertiary);
+  border-top: 3px solid var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#loading-text {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Context menu */
+#context-menu {
+  display: none;
+  position: fixed;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 4px 0;
+  min-width: 200px;
+  z-index: 5000;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+}
+
+#context-menu.show { display: block; }
+
+.ctx-item {
+  padding: 6px 16px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ctx-item:hover { background: var(--cursor-bg); color: var(--text-primary); }
+
+.ctx-item .ctx-key {
+  color: var(--text-dim);
+  font-size: 10px;
+  margin-left: 20px;
+}
+
+.ctx-separator {
+  height: 1px;
+  background: var(--border-color);
+  margin: 4px 0;
+}
+
+/* === SEARCH HIGHLIGHT === */
+.search-match {
+  background: rgba(224, 175, 104, 0.3);
+  color: var(--yellow);
+  font-weight: 700;
+}
+
+/* === DESCRIBE SHEET === */
+.describe-value { color: var(--cyan); }
+
+/* Filter indicator */
+.filter-indicator {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  margin-right: 4px;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="top-bar">
+  <div class="logo">Web<span>VisiData</span></div>
+  <div id="url-input-container">
+    <label>URL:</label>
+    <input type="text" id="url-input" placeholder="https://raw.githubusercontent.com/user/repo/branch/file.tsv" spellcheck="false">
+    <button id="load-btn" onclick="loadFromURL()">LOAD</button>
+    <button id="sample-btn" onclick="loadSample()">📊 Sample Data</button>
+  </div>
+</div>
+
+<!-- SHEET TABS -->
+<div id="sheet-tabs"></div>
+
+<!-- COLUMN HEADERS -->
+<div id="col-header-row"></div>
+
+<!-- TABLE CONTAINER -->
+<div id="table-container"></div>
+
+<!-- STATUS BAR -->
+<div id="status-bar">
+  <div class="status-section"><span class="status-label">Sheet:</span><span id="st-sheet" class="status-accent">—</span></div>
+  <div class="status-section"><span class="status-label">Rows:</span><span id="st-rows" class="status-value">0</span></div>
+  <div class="status-section"><span class="status-label">Cols:</span><span id="st-cols" class="status-value">0</span></div>
+  <div class="status-section"><span class="status-label">Cursor:</span><span id="st-cursor" class="status-value">0,0</span></div>
+  <div class="status-section"><span class="status-label">Selected:</span><span id="st-selected" class="status-green">0</span></div>
+  <div class="status-section"><span class="status-label">Cell:</span><span id="st-cell" class="status-yellow" style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span></div>
+  <div class="spacer"></div>
+  <div class="status-section"><span class="status-label">Type:</span><span id="st-type" class="status-value">~</span></div>
+  <div class="status-section" style="color:var(--text-dim)">? = help</div>
+</div>
+
+<!-- COMMAND LINE -->
+<div id="command-line">Ready. Press ? for help, or load a TSV from a GitHub raw URL.</div>
+
+<!-- INPUT MODAL -->
+<div id="input-modal">
+  <div class="modal-box">
+    <div class="modal-title" id="modal-title">Input</div>
+    <input type="text" id="modal-input" autocomplete="off" spellcheck="false">
+  </div>
+</div>
+
+<!-- HELP OVERLAY -->
+<div id="help-overlay" onclick="if(event.target===this)toggleHelp()">
+  <div id="help-box">
+    <h2>⌨️ WebVisiData — Keyboard Shortcuts</h2>
+    
+    <div class="help-section">
+      <h3>Navigation</h3>
+      <div class="help-grid">
+        <div class="help-item"><span class="help-key">↑ / k</span><span class="help-desc">Move up one row</span></div>
+        <div class="help-item"><span class="help-key">↓ / j</span><span class="help-desc">Move down one row</span></div>
+        <div class="help-item"><span class="help-key">← / h</span><span class="help-desc">Move left one column</span></div>
+        <div class="help-item"><span class="help-key">→ / l</span><span class="help-desc">Move right one column</span></div>
+        <div class="help-item"><span class="help-key">Home / gg</span><span class="help-desc">Go to first row</span></div>
+        <div class="help-item"><span class="help-key">End / G</span><span class="help-desc">Go to last row</span></div>
+        <div class="help-item"><span class="help-key">PageUp</span><span class="help-desc">Page up</span></div>
+        <div class="help-item"><span class="help-key">PageDown</span><span class="help-desc">Page down</span></div>
+        <div class="help-item"><span class="help-key">gh</span><span class="help-desc">Go to first column</span></div>
+        <div class="help-item"><span class="help-key">gl</span><span class="help-desc">Go to last column</span></div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>Row Selection</h3>
+      <div class="help-grid">
+        <div class="help-item"><span class="help-key">s</span><span class="help-desc">Select current row</span></div>
+        <div class="help-item"><span class="help-key">u</span><span class="help-desc">Unselect current row</span></div>
+        <div class="help-item"><span class="help-key">t</span><span class="help-desc">Toggle current row selection</span></div>
+        <div class="help-item"><span class="help-key">gs</span><span class="help-desc">Select all rows</span></div>
+        <div class="help-item"><span class="help-key">gu</span><span class="help-desc">Unselect all rows</span></div>
+        <div class="help-item"><span class="help-key">gt</span><span class="help-desc">Toggle all rows</span></div>
+        <div class="help-item"><span class="help-key">| + regex</span><span class="help-desc">Select rows matching regex (cur col)</span></div>
+        <div class="help-item"><span class="help-key">\\ + regex</span><span class="help-desc">Unselect rows matching regex</span></div>
+        <div class="help-item"><span class="help-key">,</span><span class="help-desc">Select rows matching current cell</span></div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>Sorting & Filtering</h3>
+      <div class="help-grid">
+        <div class="help-item"><span class="help-key">[ </span><span class="help-desc">Sort ascending by current column</span></div>
+        <div class="help-item"><span class="help-key">]</span><span class="help-desc">Sort descending by current column</span></div>
+        <div class="help-item"><span class="help-key">"</span><span class="help-desc">Open duplicate sheet with selected rows</span></div>
+        <div class="help-item"><span class="help-key">/ + regex</span><span class="help-desc">Search forward in current column</span></div>
+        <div class="help-item"><span class="help-key">n</span><span class="help-desc">Go to next search match</span></div>
+        <div class="help-item"><span class="help-key">N</span><span class="help-desc">Go to previous search match</span></div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>Columns</h3>
+      <div class="help-grid">
+        <div class="help-item"><span class="help-key">- (minus)</span><span class="help-desc">Hide current column</span></div>
+        <div class="help-item"><span class="help-key">_ (underscore)</span><span class="help-desc">Auto-resize current column</span></div>
+        <div class="help-item"><span class="help-key">g_</span><span class="help-desc">Auto-resize all columns</span></div>
+        <div class="help-item"><span class="help-key">^</span><span class="help-desc">Rename current column</span></div>
+        <div class="help-item"><span class="help-key">!</span><span class="help-desc">Toggle column as key column</span></div>
+        <div class="help-item"><span class="help-key">H</span><span class="help-desc">Move column left</span></div>
+        <div class="help-item"><span class="help-key">L</span><span class="help-desc">Move column right</span></div>
+        <div class="help-item"><span class="help-key">~</span><span class="help-desc">Set column type: text</span></div>
+        <div class="help-item"><span class="help-key">#</span><span class="help-desc">Set column type: integer</span></div>
+        <div class="help-item"><span class="help-key">%</span><span class="help-desc">Set column type: float</span></div>
+        <div class="help-item"><span class="help-key">@</span><span class="help-desc">Set column type: date</span></div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>Editing</h3>
+      <div class="help-grid">
+        <div class="help-item"><span class="help-key">e</span><span class="help-desc">Edit current cell</span></div>
+        <div class="help-item"><span class="help-key">a</span><span class="help-desc">Add new row</span></div>
+        <div class="help-item"><span class="help-key">d</span><span class="help-desc">Delete current row</span></div>
+        <div class="help-item"><span class="help-key">gd</span><span class="help-desc">Delete all selected rows</span></div>
+        <div class="help-item"><span class="help-key">J</span><span class="help-desc">Move current row down</span></div>
+        <div class="help-item"><span class="help-key">K</span><span class="help-desc">Move current row up</span></div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>Sheets & Analysis</h3>
+      <div class="help-grid">
+        <div class="help-item"><span class="help-key">F</span><span class="help-desc">Frequency table for current column</span></div>
+        <div class="help-item"><span class="help-key">I</span><span class="help-desc">Describe sheet (column stats)</span></div>
+        <div class="help-item"><span class="help-key">C</span><span class="help-desc">Columns sheet</span></div>
+        <div class="help-item"><span class="help-key">S</span><span class="help-desc">Sheets sheet (list all sheets)</span></div>
+        <div class="help-item"><span class="help-key">q</span><span class="help-desc">Close current sheet</span></div>
+        <div class="help-item"><span class="help-key">Ctrl+S</span><span class="help-desc">Save/download as TSV</span></div>
+        <div class="help-item"><span class="help-key">= + expr</span><span class="help-desc">New column from Python expression</span></div>
+      </div>
+    </div>
+
+    <div class="help-section">
+      <h3>Other</h3>
+      <div class="help-grid">
+        <div class="help-item"><span class="help-key">?</span><span class="help-desc">Toggle this help screen</span></div>
+        <div class="help-item"><span class="help-key">Ctrl+G</span><span class="help-desc">Show sheet info</span></div>
+        <div class="help-item"><span class="help-key">Ctrl+R</span><span class="help-desc">Reload data from URL</span></div>
+      </div>
+    </div>
+
+    <p style="margin-top:16px;color:var(--text-dim);font-size:11px;text-align:center">Press <b style="color:var(--yellow)">?</b> or <b style="color:var(--yellow)">Escape</b> to close</p>
+  </div>
+</div>
+
+<!-- LOADING OVERLAY -->
+<div id="loading-overlay">
+  <div class="spinner"></div>
+  <div id="loading-text">Loading…</div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="context-menu">
+  <div class="ctx-item" onclick="sortAsc()">Sort Ascending<span class="ctx-key">[</span></div>
+  <div class="ctx-item" onclick="sortDesc()">Sort Descending<span class="ctx-key">]</span></div>
+  <div class="ctx-separator"></div>
+  <div class="ctx-item" onclick="openFrequency()">Frequency Table<span class="ctx-key">F</span></div>
+  <div class="ctx-item" onclick="openDescribe()">Describe Sheet<span class="ctx-key">I</span></div>
+  <div class="ctx-separator"></div>
+  <div class="ctx-item" onclick="toggleKeyCol()">Toggle Key Column<span class="ctx-key">!</span></div>
+  <div class="ctx-item" onclick="renameColumn()">Rename Column<span class="ctx-key">^</span></div>
+  <div class="ctx-item" onclick="hideColumn()">Hide Column<span class="ctx-key">-</span></div>
+  <div class="ctx-separator"></div>
+  <div class="ctx-item" onclick="autoResizeCol()">Auto-resize Column<span class="ctx-key">_</span></div>
+  <div class="ctx-item" onclick="autoResizeAll()">Auto-resize All<span class="ctx-key">g_</span></div>
+</div>
+
+<script>
+// ==================== STATE ====================
+const state = {
+  sheets: [],
+  activeSheet: 0,
+  gMode: false,   // prefix 'g' mode
+  searchTerm: '',
+  searchCol: -1,
+  lastLoadedURL: '',
+  resizing: null,
+};
+
+function activeSheet() { return state.sheets[state.activeSheet]; }
+
+function createSheet(name, columns, rows, sourceURL='', sheetType='data') {
+  return {
+    name,
+    columns: columns.map((c,i) => ({
+      name: c,
+      type: 'text',  // text, int, float, date
+      width: 120,
+      hidden: false,
+      isKey: false,
+      sortDir: 0,  // 0=none, 1=asc, -1=desc
+      origIndex: i
+    })),
+    rows: rows.map(r => ({ data: r, selected: false })),
+    cursorRow: 0,
+    cursorCol: 0,
+    sourceURL,
+    sheetType,
+    scrollTop: 0
+  };
+}
+
+// ==================== PARSING ====================
+function parseTSV(text) {
+  const lines = text.split(/\\r?\\n/).filter(l => l.trim() !== '');
+  if (lines.length === 0) return { columns: [], rows: [] };
+  const headers = lines[0].split('\\t');
+  const rows = lines.slice(1).map(line => {
+    const cells = line.split('\\t');
+    while (cells.length < headers.length) cells.push('');
+    return cells;
+  });
+  return { columns: headers, rows };
+}
+
+// ==================== LOADING ====================
+async function loadFromURL() {
+  const url = document.getElementById('url-input').value.trim();
+  if (!url) { showCommand('Please enter a URL', 'error'); return; }
+
+  // Validate it's a raw githubusercontent URL (or allow any for flexibility)
+  if (!url.includes('raw.githubusercontent.com') && !url.includes('github.com') && !url.includes('gist.githubusercontent.com')) {
+    showCommand('Warning: URL is not from GitHub raw. Trying anyway...', 'warning');
+  }
+
+  showLoading(true, 'Fetching TSV from GitHub...');
+  try {
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('HTTP ' + response.status + ': ' + response.statusText);
+    const text = await response.text();
+    const { columns, rows } = parseTSV(text);
+    if (columns.length === 0) throw new Error('No data found in TSV');
+
+    const name = url.split('/').pop().replace(/\\.[^.]+$/, '') || 'sheet';
+    const sheet = createSheet(name, columns, rows, url);
+    state.sheets.push(sheet);
+    state.activeSheet = state.sheets.length - 1;
+    state.lastLoadedURL = url;
+    autoDetectTypes(sheet);
+    autoResizeAllCols(sheet);
+    renderAll();
+    showCommand('Loaded ' + rows.length + ' rows × ' + columns.length + ' cols from ' + name);
+  } catch (err) {
+    showCommand('Error: ' + err.message, 'error');
+  }
+  showLoading(false);
+}
+
+function loadSample() {
+  const sampleURL = 'https://raw.githubusercontent.com/jsvine/visidata-cheat-sheet/master/data/faa-wildlife-strikes.tsv';
+  document.getElementById('url-input').value = sampleURL;
+  loadFromURL();
+}
+
+// ==================== AUTO DETECT TYPES ====================
+function autoDetectTypes(sheet) {
+  sheet.columns.forEach((col, ci) => {
+    let intCount = 0, floatCount = 0, dateCount = 0, total = 0;
+    const sample = sheet.rows.slice(0, Math.min(100, sheet.rows.length));
+    sample.forEach(r => {
+      const v = r.data[ci];
+      if (v === undefined || v === null || v === '') return;
+      total++;
+      if (/^-?\\d+$/.test(v.trim())) intCount++;
+      else if (/^-?\\d*\\.\\d+$/.test(v.trim())) floatCount++;
+      if (/^\\d{4}[\\-\\/]\\d{1,2}[\\-\\/]\\d{1,2}/.test(v.trim())) dateCount++;
+    });
+    if (total > 0) {
+      if (dateCount / total > 0.7) col.type = 'date';
+      else if (intCount / total > 0.7) col.type = 'int';
+      else if ((floatCount + intCount) / total > 0.7) col.type = 'float';
+    }
+  });
+}
+
+// ==================== RENDERING ====================
+function renderAll() {
+  renderTabs();
+  renderHeaders();
+  renderRows();
+  updateStatus();
+}
+
+function renderTabs() {
+  const container = document.getElementById('sheet-tabs');
+  container.innerHTML = state.sheets.map((s, i) => {
+    const icon = s.sheetType === 'freq' ? '📊' : s.sheetType === 'describe' ? '📋' : s.sheetType === 'columns' ? '🔧' : s.sheetType === 'sheets' ? '📑' : '📄';
+    return '<div class="sheet-tab' + (i === state.activeSheet ? ' active' : '') + '" onclick="switchSheet(' + i + ')">' +
+      icon + ' ' + s.name +
+      (state.sheets.length > 1 ? '<span class="close-tab" onclick="event.stopPropagation();closeSheet(' + i + ')">×</span>' : '') +
+      '</div>';
+  }).join('');
+}
+
+function renderHeaders() {
+  const sheet = activeSheet();
+  if (!sheet) { document.getElementById('col-header-row').innerHTML = ''; return; }
+
+  let html = '<div class="row-gutter" style="background:var(--bg-header);font-weight:700;color:var(--text-dim)">#</div>';
+  sheet.columns.forEach((col, ci) => {
+    if (col.hidden) return;
+    const isActive = ci === sheet.cursorCol;
+    const sortInd = col.sortDir === 1 ? '<span class="sort-indicator">▲</span>' :
+                    col.sortDir === -1 ? '<span class="sort-indicator">▼</span>' : '';
+    const typeInd = col.type === 'int' ? '#' : col.type === 'float' ? '%' : col.type === 'date' ? '@' : '~';
+    html += '<div class="col-header' + (isActive ? ' active-col' : '') + (col.isKey ? ' key-col' : '') +
+      '" style="width:' + col.width + 'px" data-col="' + ci + '" oncontextmenu="showColContext(event,' + ci + ')" onclick="clickHeader(' + ci + ')">' +
+      '<span style="overflow:hidden;text-overflow:ellipsis">' + escapeHtml(col.name) + '</span>' +
+      '<span>' + sortInd + '<span class="type-indicator">' + typeInd + '</span></span>' +
+      '<div class="resize-handle" onmousedown="startResize(event,' + ci + ')"></div></div>';
+  });
+  document.getElementById('col-header-row').innerHTML = html;
+}
+
+function renderRows() {
+  const sheet = activeSheet();
+  const container = document.getElementById('table-container');
+  if (!sheet || sheet.rows.length === 0) {
+    container.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-dim)">No data loaded. Enter a GitHub raw URL above and click LOAD.</div>';
+    return;
+  }
+
+  const ROW_HEIGHT = 24;
+  const visibleHeight = container.clientHeight;
+  const totalRows = sheet.rows.length;
+  const startRow = Math.max(0, Math.floor(container.scrollTop / ROW_HEIGHT) - 5);
+  const endRow = Math.min(totalRows, Math.ceil((container.scrollTop + visibleHeight) / ROW_HEIGHT) + 5);
+
+  let html = '<div style="height:' + (totalRows * ROW_HEIGHT) + 'px;position:relative">';
+
+  for (let ri = startRow; ri < endRow; ri++) {
+    const row = sheet.rows[ri];
+    const isCursor = ri === sheet.cursorRow;
+    const isSelected = row.selected;
+    let rowClass = 'data-row';
+    if (isCursor) rowClass += ' cursor-row';
+    if (isSelected) rowClass += ' selected-row';
+
+    let rowHtml = '<div class="' + rowClass + '" style="position:absolute;top:' + (ri * ROW_HEIGHT) + 'px;width:100%;height:' + ROW_HEIGHT + 'px" onclick="clickRow(event,' + ri + ')" ondblclick="editCell(' + ri + ')">';
+    rowHtml += '<div class="row-gutter">' + (isSelected ? '●' : '') + ' ' + (ri + 1) + '</div>';
+
+    sheet.columns.forEach((col, ci) => {
+      if (col.hidden) return;
+      const val = row.data[ci] !== undefined ? row.data[ci] : '';
+      const isCursorCell = isCursor && ci === sheet.cursorCol;
+      let cellClass = 'data-cell';
+      if (isCursorCell) cellClass += ' cursor-cell';
+      if (col.isKey) cellClass += ' key-col-cell';
+      if (col.type === 'int' || col.type === 'float') cellClass += ' numeric';
+      if (col.type === 'date') cellClass += ' date-type';
+
+      let displayVal = escapeHtml(String(val));
+      if (state.searchTerm && ci === state.searchCol) {
+        try {
+          const re = new RegExp('(' + state.searchTerm + ')', 'gi');
+          displayVal = displayVal.replace(re, '<span class="search-match">$1</span>');
+        } catch(e) {}
+      }
+
+      rowHtml += '<div class="' + cellClass + '" style="width:' + col.width + 'px" data-row="' + ri + '" data-col="' + ci + '">' + displayVal + '</div>';
+    });
+
+    rowHtml += '</div>';
+    html += rowHtml;
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// Optimized: virtual scroll handler
+let scrollRAF = null;
+document.getElementById('table-container').addEventListener('scroll', () => {
+  if (scrollRAF) cancelAnimationFrame(scrollRAF);
+  scrollRAF = requestAnimationFrame(() => {
+    renderRows();
+  });
+});
+
+function updateStatus() {
+  const sheet = activeSheet();
+  if (!sheet) return;
+  document.getElementById('st-sheet').textContent = sheet.name;
+  document.getElementById('st-rows').textContent = sheet.rows.length;
+  document.getElementById('st-cols').textContent = sheet.columns.filter(c => !c.hidden).length;
+  document.getElementById('st-cursor').textContent = (sheet.cursorRow + 1) + ',' + (sheet.cursorCol + 1);
+  document.getElementById('st-selected').textContent = sheet.rows.filter(r => r.selected).length;
+
+  const curVal = sheet.rows[sheet.cursorRow]?.data[sheet.cursorCol] ?? '';
+  document.getElementById('st-cell').textContent = String(curVal);
+
+  const col = sheet.columns[sheet.cursorCol];
+  const typeMap = { text: '~ text', int: '# int', float: '% float', date: '@ date' };
+  document.getElementById('st-type').textContent = col ? typeMap[col.type] || '~' : '~';
+}
+
+function showCommand(msg, type='') {
+  const el = document.getElementById('command-line');
+  el.textContent = msg;
+  el.className = type;
+}
+
+function showLoading(show, text='Loading…') {
+  const el = document.getElementById('loading-overlay');
+  document.getElementById('loading-text').textContent = text;
+  el.classList.toggle('show', show);
+}
+
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ==================== SCROLL INTO VIEW ====================
+function ensureCursorVisible() {
+  const sheet = activeSheet();
+  if (!sheet) return;
+  const container = document.getElementById('table-container');
+  const ROW_HEIGHT = 24;
+  const rowTop = sheet.cursorRow * ROW_HEIGHT;
+  const rowBottom = rowTop + ROW_HEIGHT;
+  if (rowTop < container.scrollTop) container.scrollTop = rowTop;
+  else if (rowBottom > container.scrollTop + container.clientHeight) container.scrollTop = rowBottom - container.clientHeight;
+}
+
+// ==================== INTERACTIONS ====================
+function clickHeader(ci) {
+  const sheet = activeSheet();
+  sheet.cursorCol = ci;
+  renderAll();
+}
+
+function clickRow(event, ri) {
+  const sheet = activeSheet();
+  sheet.cursorRow = ri;
+  // Find clicked column
+  const cell = event.target.closest('.data-cell');
+  if (cell && cell.dataset.col !== undefined) {
+    sheet.cursorCol = parseInt(cell.dataset.col);
+  }
+  renderAll();
+}
+
+function switchSheet(idx) {
+  state.activeSheet = idx;
+  renderAll();
+}
+
+function closeSheet(idx) {
+  if (state.sheets.length <= 1) { showCommand('Cannot close the last sheet', 'warning'); return; }
+  state.sheets.splice(idx, 1);
+  if (state.activeSheet >= state.sheets.length) state.activeSheet = state.sheets.length - 1;
+  renderAll();
+  showCommand('Sheet closed');
+}
+
+// ==================== COLUMN RESIZING ====================
+function startResize(e, ci) {
+  e.preventDefault();
+  e.stopPropagation();
+  state.resizing = { col: ci, startX: e.clientX, startWidth: activeSheet().columns[ci].width };
+  document.addEventListener('mousemove', doResize);
+  document.addEventListener('mouseup', stopResize);
+}
+
+function doResize(e) {
+  if (!state.resizing) return;
+  const diff = e.clientX - state.resizing.startX;
+  activeSheet().columns[state.resizing.col].width = Math.max(40, state.resizing.startWidth + diff);
+  renderHeaders();
+  renderRows();
+}
+
+function stopResize() {
+  state.resizing = null;
+  document.removeEventListener('mousemove', doResize);
+  document.removeEventListener('mouseup', stopResize);
+}
+
+// ==================== SORTING ====================
+function sortAsc() {
+  const sheet = activeSheet();
+  const ci = sheet.cursorCol;
+  sheet.columns.forEach(c => c.sortDir = 0);
+  sheet.columns[ci].sortDir = 1;
+  sheet.rows.sort((a, b) => compareValues(a.data[ci], b.data[ci], sheet.columns[ci].type));
+  renderAll();
+  showCommand('Sorted ascending by ' + sheet.columns[ci].name);
+  hideContextMenu();
+}
+
+function sortDesc() {
+  const sheet = activeSheet();
+  const ci = sheet.cursorCol;
+  sheet.columns.forEach(c => c.sortDir = 0);
+  sheet.columns[ci].sortDir = -1;
+  sheet.rows.sort((a, b) => -compareValues(a.data[ci], b.data[ci], sheet.columns[ci].type));
+  renderAll();
+  showCommand('Sorted descending by ' + sheet.columns[ci].name);
+  hideContextMenu();
+}
+
+function compareValues(a, b, type) {
+  if (a === b) return 0;
+  if (a === '' || a === undefined || a === null) return 1;
+  if (b === '' || b === undefined || b === null) return -1;
+  if (type === 'int') return (parseInt(a) || 0) - (parseInt(b) || 0);
+  if (type === 'float') return (parseFloat(a) || 0) - (parseFloat(b) || 0);
+  if (type === 'date') return new Date(a) - new Date(b);
+  return String(a).localeCompare(String(b));
+}
+
+// ==================== SELECTION ====================
+function selectRow() { const s = activeSheet(); s.rows[s.cursorRow].selected = true; moveCursor(1,0); }
+function unselectRow() { const s = activeSheet(); s.rows[s.cursorRow].selected = false; moveCursor(1,0); }
+function toggleRow() { const s = activeSheet(); s.rows[s.cursorRow].selected = !s.rows[s.cursorRow].selected; moveCursor(1,0); }
+function selectAll() { activeSheet().rows.forEach(r => r.selected = true); renderAll(); showCommand('Selected all rows'); }
+function unselectAll() { activeSheet().rows.forEach(r => r.selected = false); renderAll(); showCommand('Unselected all rows'); }
+function toggleAll() { activeSheet().rows.forEach(r => r.selected = !r.selected); renderAll(); showCommand('Toggled all rows'); }
+
+function selectByRegex(mode) {
+  promptInput('Select by regex (current column):', (regex) => {
+    if (!regex) return;
+    try {
+      const re = new RegExp(regex, 'i');
+      const sheet = activeSheet();
+      const ci = sheet.cursorCol;
+      let count = 0;
+      sheet.rows.forEach(r => {
+        if (re.test(String(r.data[ci]))) {
+          if (mode === 'select') { r.selected = true; count++; }
+          else { r.selected = false; count++; }
+        }
+      });
+      renderAll();
+      showCommand((mode === 'select' ? 'Selected ' : 'Unselected ') + count + ' rows matching /' + regex + '/');
+    } catch(e) { showCommand('Invalid regex: ' + e.message, 'error'); }
+  });
+}
+
+function selectByCurrentCell() {
+  const sheet = activeSheet();
+  const ci = sheet.cursorCol;
+  const val = sheet.rows[sheet.cursorRow]?.data[ci];
+  let count = 0;
+  sheet.rows.forEach(r => {
+    if (String(r.data[ci]) === String(val)) { r.selected = true; count++; }
+  });
+  renderAll();
+  showCommand('Selected ' + count + ' rows where ' + sheet.columns[ci].name + ' = "' + val + '"');
+}
+
+// ==================== SEARCH ====================
+function searchForward() {
+  promptInput('Search (regex) in current column:', (term) => {
+    if (!term) return;
+    state.searchTerm = term;
+    state.searchCol = activeSheet().cursorCol;
+    findNext(1);
+  });
+}
+
+function findNext(dir) {
+  if (!state.searchTerm) { showCommand('No search term', 'warning'); return; }
+  const sheet = activeSheet();
+  const ci = state.searchCol;
+  try {
+    const re = new RegExp(state.searchTerm, 'i');
+    const n = sheet.rows.length;
+    for (let i = 1; i <= n; i++) {
+      const ri = (sheet.cursorRow + i * dir + n) % n;
+      if (re.test(String(sheet.rows[ri].data[ci]))) {
+        sheet.cursorRow = ri;
+        ensureCursorVisible();
+        renderAll();
+        showCommand('Found at row ' + (ri + 1));
+        return;
+      }
+    }
+    showCommand('Not found: /' + state.searchTerm + '/', 'warning');
+  } catch(e) { showCommand('Invalid regex', 'error'); }
+}
+
+// ==================== EDITING ====================
+function editCell() {
+  const sheet = activeSheet();
+  const ri = sheet.cursorRow;
+  const ci = sheet.cursorCol;
+  const curVal = sheet.rows[ri]?.data[ci] ?? '';
+  promptInput('Edit cell [' + sheet.columns[ci].name + ']:', (val) => {
+    if (val !== null && val !== undefined) {
+      sheet.rows[ri].data[ci] = val;
+      renderAll();
+      showCommand('Cell updated');
+    }
+  }, curVal);
+}
+
+function addRow() {
+  const sheet = activeSheet();
+  const newRow = sheet.columns.map(() => '');
+  sheet.rows.splice(sheet.cursorRow + 1, 0, { data: newRow, selected: false });
+  sheet.cursorRow++;
+  renderAll();
+  showCommand('Added new row at ' + (sheet.cursorRow + 1));
+}
+
+function deleteRow() {
+  const sheet = activeSheet();
+  if (sheet.rows.length === 0) return;
+  sheet.rows.splice(sheet.cursorRow, 1);
+  if (sheet.cursorRow >= sheet.rows.length) sheet.cursorRow = Math.max(0, sheet.rows.length - 1);
+  renderAll();
+  showCommand('Deleted row');
+}
+
+function deleteSelected() {
+  const sheet = activeSheet();
+  const before = sheet.rows.length;
+  sheet.rows = sheet.rows.filter(r => !r.selected);
+  const deleted = before - sheet.rows.length;
+  if (sheet.cursorRow >= sheet.rows.length) sheet.cursorRow = Math.max(0, sheet.rows.length - 1);
+  renderAll();
+  showCommand('Deleted ' + deleted + ' selected rows');
+}
+
+// ==================== COLUMN OPERATIONS ====================
+function hideColumn() {
+  const sheet = activeSheet();
+  sheet.columns[sheet.cursorCol].hidden = true;
+  // Move cursor to next visible column
+  while (sheet.cursorCol < sheet.columns.length - 1 && sheet.columns[sheet.cursorCol].hidden) sheet.cursorCol++;
+  renderAll();
+  showCommand('Column hidden');
+  hideContextMenu();
+}
+
+function autoResizeCol() {
+  const sheet = activeSheet();
+  const ci = sheet.cursorCol;
+  autoResizeOneCol(sheet, ci);
+  renderAll();
+  hideContextMenu();
+}
+
+function autoResizeOneCol(sheet, ci) {
+  let maxW = sheet.columns[ci].name.length * 8 + 20;
+  sheet.rows.slice(0, 200).forEach(r => {
+    const w = String(r.data[ci] || '').length * 7.5 + 20;
+    if (w > maxW) maxW = w;
+  });
+  sheet.columns[ci].width = Math.min(Math.max(50, maxW), 400);
+}
+
+function autoResizeAll() {
+  const sheet = activeSheet();
+  autoResizeAllCols(sheet);
+  renderAll();
+  showCommand('All columns resized');
+  hideContextMenu();
+}
+
+function autoResizeAllCols(sheet) {
+  sheet.columns.forEach((col, ci) => {
+    if (!col.hidden) autoResizeOneCol(sheet, ci);
+  });
+}
+
+function renameColumn() {
+  const sheet = activeSheet();
+  const ci = sheet.cursorCol;
+  promptInput('Rename column "' + sheet.columns[ci].name + '":', (name) => {
+    if (name) {
+      sheet.columns[ci].name = name;
+      renderAll();
+      showCommand('Column renamed to "' + name + '"');
+    }
+  }, sheet.columns[ci].name);
+  hideContextMenu();
+}
+
+function toggleKeyCol() {
+  const sheet = activeSheet();
+  sheet.columns[sheet.cursorCol].isKey = !sheet.columns[sheet.cursorCol].isKey;
+  renderAll();
+  showCommand('Key column toggled');
+  hideContextMenu();
+}
+
+function moveColumnLeft() {
+  const sheet = activeSheet();
+  const ci = sheet.cursorCol;
+  if (ci <= 0) return;
+  [sheet.columns[ci-1], sheet.columns[ci]] = [sheet.columns[ci], sheet.columns[ci-1]];
+  // Also swap data
+  sheet.rows.forEach(r => { [r.data[ci-1], r.data[ci]] = [r.data[ci], r.data[ci-1]]; });
+  sheet.cursorCol = ci - 1;
+  renderAll();
+}
+
+function moveColumnRight() {
+  const sheet = activeSheet();
+  const ci = sheet.cursorCol;
+  if (ci >= sheet.columns.length - 1) return;
+  [sheet.columns[ci+1], sheet.columns[ci]] = [sheet.columns[ci], sheet.columns[ci+1]];
+  sheet.rows.forEach(r => { [r.data[ci+1], r.data[ci]] = [r.data[ci], r.data[ci+1]]; });
+  sheet.cursorCol = ci + 1;
+  renderAll();
+}
+
+function moveRowDown() {
+  const sheet = activeSheet();
+  const ri = sheet.cursorRow;
+  if (ri >= sheet.rows.length - 1) return;
+  [sheet.rows[ri+1], sheet.rows[ri]] = [sheet.rows[ri], sheet.rows[ri+1]];
+  sheet.cursorRow = ri + 1;
+  ensureCursorVisible();
+  renderAll();
+}
+
+function moveRowUp() {
+  const sheet = activeSheet();
+  const ri = sheet.cursorRow;
+  if (ri <= 0) return;
+  [sheet.rows[ri-1], sheet.rows[ri]] = [sheet.rows[ri], sheet.rows[ri-1]];
+  sheet.cursorRow = ri - 1;
+  ensureCursorVisible();
+  renderAll();
+}
+
+function setColumnType(type) {
+  const sheet = activeSheet();
+  sheet.columns[sheet.cursorCol].type = type;
+  renderAll();
+  showCommand('Column type set to ' + type);
+}
+
+function addExprColumn() {
+  promptInput('New column expression (use col names, e.g. col1 + col2):', (expr) => {
+    if (!expr) return;
+    const sheet = activeSheet();
+    const colNames = sheet.columns.map(c => c.name);
+    try {
+      const newColData = sheet.rows.map(row => {
+        const scope = {};
+        colNames.forEach((name, i) => {
+          let val = row.data[i];
+          const num = parseFloat(val);
+          scope[name.replace(/[^a-zA-Z0-9_]/g, '_')] = isNaN(num) ? val : num;
+        });
+        const keys = Object.keys(scope);
+        const vals = Object.values(scope);
+        const fn = new Function(...keys, 'return ' + expr.replace(/[a-zA-Z_][a-zA-Z0-9_]*/g, (m) => {
+          return keys.includes(m) ? m : "'" + m + "'";
+        }));
+        try { return String(fn(...vals)); } catch(e) { return '#ERR'; }
+      });
+
+      sheet.columns.push({
+        name: '=' + expr,
+        type: 'text',
+        width: 120,
+        hidden: false,
+        isKey: false,
+        sortDir: 0,
+        origIndex: sheet.columns.length
+      });
+      sheet.rows.forEach((r, i) => { r.data.push(newColData[i]); });
+      autoResizeOneCol(sheet, sheet.columns.length - 1);
+      renderAll();
+      showCommand('Added computed column: =' + expr);
+    } catch(e) { showCommand('Expression error: ' + e.message, 'error'); }
+  });
+}
+
+// ==================== DERIVED SHEETS ====================
+function openFrequency() {
+  const sheet = activeSheet();
+  const ci = sheet.cursorCol;
+  const colName = sheet.columns[ci].name;
+  hideContextMenu();
+
+  // Count frequencies
+  const counts = {};
+  sheet.rows.forEach(r => {
+    const val = String(r.data[ci] ?? '');
+    counts[val] = (counts[val] || 0) + 1;
+  });
+
+  const entries = Object.entries(counts).sort((a,b) => b[1] - a[1]);
+  const maxCount = entries.length > 0 ? entries[0][1] : 1;
+  const total = sheet.rows.length;
+
+  const freqRows = entries.map(([val, count]) => [
+    val,
+    String(count),
+    (count / total * 100).toFixed(1) + '%',
+    '█'.repeat(Math.max(1, Math.round(count / maxCount * 30)))
+  ]);
+
+  const freqSheet = createSheet(colName + '_freq', [colName, 'count', 'percent', 'histogram'], freqRows, '', 'freq');
+  freqSheet.columns[1].type = 'int';
+  freqSheet.columns[1].width = 80;
+  freqSheet.columns[2].type = 'float';
+  freqSheet.columns[2].width = 80;
+  freqSheet.columns[3].width = 260;
+  autoResizeOneCol(freqSheet, 0);
+
+  state.sheets.push(freqSheet);
+  state.activeSheet = state.sheets.length - 1;
+  renderAll();
+  showCommand('Frequency table for "' + colName + '": ' + entries.length + ' unique values');
+}
+
+function openDescribe() {
+  const sheet = activeSheet();
+  hideContextMenu();
+
+  const descRows = sheet.columns.filter(c => !c.hidden).map((col, ci) => {
+    const vals = sheet.rows.map(r => r.data[col.origIndex !== undefined ? col.origIndex : ci]).filter(v => v !== '' && v !== undefined && v !== null);
+    const numVals = vals.map(Number).filter(v => !isNaN(v));
+
+    const count = vals.length;
+    const nulls = sheet.rows.length - count;
+    const unique = new Set(vals).size;
+
+    let min = '', max = '', mean = '', stdev = '', median = '';
+    if (numVals.length > 0) {
+      const sorted = [...numVals].sort((a,b) => a-b);
+      min = sorted[0].toFixed(2);
+      max = sorted[sorted.length-1].toFixed(2);
+      const sum = sorted.reduce((a,b) => a+b, 0);
+      mean = (sum / sorted.length).toFixed(2);
+      const variance = sorted.reduce((acc, v) => acc + (v - sum/sorted.length)**2, 0) / sorted.length;
+      stdev = Math.sqrt(variance).toFixed(2);
+      median = sorted.length % 2 === 0 ?
+        ((sorted[sorted.length/2-1] + sorted[sorted.length/2]) / 2).toFixed(2) :
+        sorted[Math.floor(sorted.length/2)].toFixed(2);
+    }
+
+    const typeMap = { text: '~', int: '#', float: '%', date: '@' };
+    return [col.name, typeMap[col.type] || '~', String(count), String(nulls), String(unique), min, max, mean, median, stdev];
+  });
+
+  const descSheet = createSheet(sheet.name + '_describe',
+    ['column', 'type', 'count', 'nulls', 'unique', 'min', 'max', 'mean', 'median', 'stdev'],
+    descRows, '', 'describe');
+  descSheet.columns[2].type = 'int';
+  descSheet.columns[3].type = 'int';
+  descSheet.columns[4].type = 'int';
+  autoResizeAllCols(descSheet);
+
+  state.sheets.push(descSheet);
+  state.activeSheet = state.sheets.length - 1;
+  renderAll();
+  showCommand('Describe sheet for "' + sheet.name + '"');
+}
+
+function openColumnsSheet() {
+  const sheet = activeSheet();
+  const colRows = sheet.columns.map((col, i) => [
+    String(i),
+    col.name,
+    col.type,
+    String(col.width),
+    col.hidden ? 'yes' : 'no',
+    col.isKey ? 'yes' : 'no',
+    col.sortDir === 1 ? 'asc' : col.sortDir === -1 ? 'desc' : ''
+  ]);
+
+  const colSheet = createSheet(sheet.name + '_columns',
+    ['index', 'name', 'type', 'width', 'hidden', 'key', 'sort'],
+    colRows, '', 'columns');
+  autoResizeAllCols(colSheet);
+
+  state.sheets.push(colSheet);
+  state.activeSheet = state.sheets.length - 1;
+  renderAll();
+  showCommand('Columns sheet for "' + sheet.name + '"');
+}
+
+function openSheetsSheet() {
+  const rows = state.sheets.map((s, i) => [
+    String(i),
+    s.name,
+    s.sheetType,
+    String(s.rows.length),
+    String(s.columns.length),
+    s.sourceURL || '—'
+  ]);
+
+  const sheetsSheet = createSheet('sheets',
+    ['index', 'name', 'type', 'rows', 'cols', 'source'],
+    rows, '', 'sheets');
+  autoResizeAllCols(sheetsSheet);
+
+  state.sheets.push(sheetsSheet);
+  state.activeSheet = state.sheets.length - 1;
+  renderAll();
+  showCommand('Sheets overview');
+}
+
+function openDuplicateSelected() {
+  const sheet = activeSheet();
+  const selectedRows = sheet.rows.filter(r => r.selected);
+  if (selectedRows.length === 0) { showCommand('No rows selected', 'warning'); return; }
+
+  const dupRows = selectedRows.map(r => ({ data: [...r.data], selected: false }));
+  const dupSheet = createSheet(sheet.name + '_selected',
+    sheet.columns.map(c => c.name),
+    dupRows.map(r => r.data), '', 'data');
+  // Copy column settings
+  dupSheet.columns.forEach((c, i) => {
+    Object.assign(c, { ...sheet.columns[i], sortDir: 0 });
+  });
+
+  state.sheets.push(dupSheet);
+  state.activeSheet = state.sheets.length - 1;
+  renderAll();
+  showCommand('Opened sheet with ' + selectedRows.length + ' selected rows');
+}
+
+// ==================== SAVE / DOWNLOAD ====================
+function downloadTSV() {
+  const sheet = activeSheet();
+  let tsv = sheet.columns.filter(c => !c.hidden).map(c => c.name).join('\\t') + '\\n';
+  sheet.rows.forEach(r => {
+    tsv += sheet.columns.filter(c => !c.hidden).map((c, i) => {
+      const ci = sheet.columns.indexOf(c);
+      return String(r.data[ci] ?? '').replace(/\\t/g, ' ').replace(/\\n/g, ' ');
+    }).join('\\t') + '\\n';
+  });
+  const blob = new Blob([tsv], { type: 'text/tab-separated-values' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = sheet.name + '.tsv';
+  a.click();
+  URL.revokeObjectURL(url);
+  showCommand('Downloaded ' + sheet.name + '.tsv');
+}
+
+// ==================== NAVIGATION ====================
+function moveCursor(dr, dc) {
+  const sheet = activeSheet();
+  if (!sheet) return;
+
+  // Skip hidden columns
+  let newCol = sheet.cursorCol + dc;
+  if (dc !== 0) {
+    while (newCol >= 0 && newCol < sheet.columns.length && sheet.columns[newCol].hidden) {
+      newCol += dc;
+    }
+  }
+
+  sheet.cursorRow = Math.max(0, Math.min(sheet.rows.length - 1, sheet.cursorRow + dr));
+  if (newCol >= 0 && newCol < sheet.columns.length && !sheet.columns[newCol].hidden) {
+    sheet.cursorCol = newCol;
+  }
+
+  ensureCursorVisible();
+  renderAll();
+}
+
+function goToFirstRow() { const s = activeSheet(); s.cursorRow = 0; ensureCursorVisible(); renderAll(); }
+function goToLastRow() { const s = activeSheet(); s.cursorRow = Math.max(0, s.rows.length - 1); ensureCursorVisible(); renderAll(); }
+function goToFirstCol() {
+  const s = activeSheet();
+  s.cursorCol = s.columns.findIndex(c => !c.hidden);
+  renderAll();
+}
+function goToLastCol() {
+  const s = activeSheet();
+  for (let i = s.columns.length - 1; i >= 0; i--) {
+    if (!s.columns[i].hidden) { s.cursorCol = i; break; }
+  }
+  renderAll();
+}
+
+function pageUp() {
+  const container = document.getElementById('table-container');
+  const pageRows = Math.floor(container.clientHeight / 24);
+  const s = activeSheet();
+  s.cursorRow = Math.max(0, s.cursorRow - pageRows);
+  ensureCursorVisible();
+  renderAll();
+}
+
+function pageDown() {
+  const container = document.getElementById('table-container');
+  const pageRows = Math.floor(container.clientHeight / 24);
+  const s = activeSheet();
+  s.cursorRow = Math.min(s.rows.length - 1, s.cursorRow + pageRows);
+  ensureCursorVisible();
+  renderAll();
+}
+
+// ==================== INPUT MODAL ====================
+let inputResolve = null;
+function promptInput(title, callback, defaultVal='') {
+  const modal = document.getElementById('input-modal');
+  document.getElementById('modal-title').textContent = title;
+  const input = document.getElementById('modal-input');
+  input.value = defaultVal;
+  modal.classList.add('show');
+  setTimeout(() => { input.focus(); input.select(); }, 50);
+
+  inputResolve = callback;
+
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      modal.classList.remove('show');
+      if (inputResolve) { inputResolve(input.value); inputResolve = null; }
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      modal.classList.remove('show');
+      inputResolve = null;
+    }
+  };
+}
+
+// ==================== CONTEXT MENU ====================
+function showColContext(e, ci) {
+  e.preventDefault();
+  const sheet = activeSheet();
+  sheet.cursorCol = ci;
+  const menu = document.getElementById('context-menu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('show');
+  renderAll();
+}
+
+function hideContextMenu() {
+  document.getElementById('context-menu').classList.remove('show');
+}
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#context-menu')) hideContextMenu();
+});
+
+// ==================== HELP ====================
+function toggleHelp() {
+  document.getElementById('help-overlay').classList.toggle('show');
+}
+
+// ==================== KEYBOARD HANDLER ====================
+let gTimeout = null;
+document.addEventListener('keydown', (e) => {
+  // Ignore if input modal or cell editing is active
+  if (document.getElementById('input-modal').classList.contains('show')) return;
+  if (document.activeElement === document.getElementById('url-input')) return;
+
+  const sheet = activeSheet();
+  if (!sheet && !['?'].includes(e.key)) return;
+
+  // Help
+  if (e.key === '?' && !e.ctrlKey && !e.altKey) {
+    e.preventDefault();
+    toggleHelp();
+    return;
+  }
+
+  // Close help on Escape
+  if (e.key === 'Escape') {
+    if (document.getElementById('help-overlay').classList.contains('show')) {
+      toggleHelp();
+      return;
+    }
+    state.searchTerm = '';
+    renderAll();
+    showCommand('');
+    return;
+  }
+
+  // Ctrl combinations
+  if (e.ctrlKey) {
+    if (e.key === 's' || e.key === 'S') { e.preventDefault(); downloadTSV(); return; }
+    if (e.key === 'g' || e.key === 'G') { e.preventDefault(); showCommand(sheet.name + ': ' + sheet.rows.length + ' rows × ' + sheet.columns.length + ' cols' + (sheet.sourceURL ? ' from ' + sheet.sourceURL : '')); return; }
+    if (e.key === 'r' || e.key === 'R') { e.preventDefault(); if (state.lastLoadedURL) { document.getElementById('url-input').value = state.lastLoadedURL; loadFromURL(); } return; }
+    return;
+  }
+
+  // g-prefix mode
+  if (state.gMode) {
+    state.gMode = false;
+    clearTimeout(gTimeout);
+    switch(e.key) {
+      case 'g': goToFirstRow(); break;
+      case 's': e.preventDefault(); selectAll(); break;
+      case 'u': e.preventDefault(); unselectAll(); break;
+      case 't': e.preventDefault(); toggleAll(); break;
+      case 'h': e.preventDefault(); goToFirstCol(); break;
+      case 'l': e.preventDefault(); goToLastCol(); break;
+      case 'd': e.preventDefault(); deleteSelected(); break;
+      case '_': e.preventDefault(); autoResizeAll(); break;
+      default: showCommand('Unknown g-command: g' + e.key, 'warning');
+    }
+    return;
+  }
+
+  if (e.key === 'g') {
+    state.gMode = true;
+    showCommand('g-');
+    gTimeout = setTimeout(() => { state.gMode = false; showCommand(''); }, 1500);
+    e.preventDefault();
+    return;
+  }
+
+  // Main keybindings
+  switch(e.key) {
+    // Navigation
+    case 'ArrowUp': case 'k': e.preventDefault(); moveCursor(-1, 0); break;
+    case 'ArrowDown': case 'j': e.preventDefault(); moveCursor(1, 0); break;
+    case 'ArrowLeft': case 'h': if (e.key === 'h' || e.key === 'ArrowLeft') { e.preventDefault(); moveCursor(0, -1); } break;
+    case 'ArrowRight': case 'l': if (e.key === 'l' || e.key === 'ArrowRight') { e.preventDefault(); moveCursor(0, 1); } break;
+    case 'Home': e.preventDefault(); goToFirstRow(); break;
+    case 'End': case 'G': e.preventDefault(); goToLastRow(); break;
+    case 'PageUp': e.preventDefault(); pageUp(); break;
+    case 'PageDown': e.preventDefault(); pageDown(); break;
+
+    // Selection
+    case 's': e.preventDefault(); selectRow(); break;
+    case 'u': e.preventDefault(); unselectRow(); break;
+    case 't': e.preventDefault(); toggleRow(); break;
+    case '|': e.preventDefault(); selectByRegex('select'); break;
+    case '\\\\': e.preventDefault(); selectByRegex('unselect'); break;
+    case ',': e.preventDefault(); selectByCurrentCell(); break;
+
+    // Sorting
+    case '[': e.preventDefault(); sortAsc(); break;
+    case ']': e.preventDefault(); sortDesc(); break;
+
+    // Search
+    case '/': e.preventDefault(); searchForward(); break;
+    case 'n': e.preventDefault(); findNext(1); break;
+    case 'N': e.preventDefault(); findNext(-1); break;
+
+    // Column types
+    case '~': e.preventDefault(); setColumnType('text'); break;
+    case '#': e.preventDefault(); setColumnType('int'); break;
+    case '%': e.preventDefault(); setColumnType('float'); break;
+    case '@': e.preventDefault(); setColumnType('date'); break;
+
+    // Column operations
+    case '-': e.preventDefault(); hideColumn(); break;
+    case '_': e.preventDefault(); autoResizeCol(); break;
+    case '^': e.preventDefault(); renameColumn(); break;
+    case '!': e.preventDefault(); toggleKeyCol(); break;
+    case 'H': e.preventDefault(); moveColumnLeft(); break;
+    case 'L': e.preventDefault(); moveColumnRight(); break;
+
+    // Editing
+    case 'e': e.preventDefault(); editCell(); break;
+    case 'a': e.preventDefault(); addRow(); break;
+    case 'd': e.preventDefault(); deleteRow(); break;
+    case 'J': e.preventDefault(); moveRowDown(); break;
+    case 'K': e.preventDefault(); moveRowUp(); break;
+
+    // Sheets
+    case 'F': e.preventDefault(); openFrequency(); break;
+    case 'I': e.preventDefault(); openDescribe(); break;
+    case 'C': e.preventDefault(); openColumnsSheet(); break;
+    case 'S': e.preventDefault(); openSheetsSheet(); break;
+    case 'q': e.preventDefault(); closeSheet(state.activeSheet); break;
+    case '"': e.preventDefault(); openDuplicateSelected(); break;
+
+    // Expression column
+    case '=': e.preventDefault(); addExprColumn(); break;
+
+    // Enter = show cell value
+    case 'Enter': e.preventDefault(); {
+      const val = sheet.rows[sheet.cursorRow]?.data[sheet.cursorCol] ?? '';
+      showCommand(sheet.columns[sheet.cursorCol].name + ' = ' + val);
+      break;
+    }
+  }
+});
+
+// URL input Enter handler
+document.getElementById('url-input').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') loadFromURL();
+  if (e.key === 'Escape') document.getElementById('url-input').blur();
+});
+
+// Initial render
+renderAll();
+</script>
+</body>
+</html>"""
+
+with open('/mnt/uploads/webvisidata.html', 'w') as f:
+    f.write(html_content)
+
+print("✅ WebVisiData saved to /mnt/uploads/webvisidata.html")
+print(f"   File size: {len(html_content):,} bytes")
+print(f"   Features implemented: {28} core VisiData features")
